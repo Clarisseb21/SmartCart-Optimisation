@@ -1,0 +1,15 @@
+Nutrient,Weight,Rationale
+Protein,2.0,"Core macronutrient for maintenance, satiety, and muscle repair."
+Carbohydrates,1.2,Energy source; not typically deficient.
+Fats,1.2,Supports hormones and vitamin absorption; moderate importance.
+Fiber,1.8,Often under-consumed; critical for gut health and metabolic regulation.
+Iron,1.7,"Common deficiency, esp. in menstruating individuals; supports energy."
+Calcium,1.5,Important for bone health and muscle function.
+Omega-3,1.5,Anti-inflammatory; supports brain and heart health.
+Zinc,1.0,Supports immunity and enzymes; moderately important.
+Vitamin B12,1.0,Needed for energy and nerves; low risk unless vegan.
+Folate (B9),1.0,"Important for cell repair, but generally sufficient in balanced diet."
+Vitamin C,1.0,"Immune function, iron absorption support."
+Sugar (added),-1.0,Linked to metabolic disease and inflammation; limit intake.
+Saturated Fat,-0.8,High intake linked to heart disease.
+Sodium,-0.8,Often overconsumed; raises blood pressure.

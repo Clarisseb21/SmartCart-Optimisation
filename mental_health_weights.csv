@@ -1,0 +1,15 @@
+Nutrient,Weight,Rationale
+Protein,2.0,Needed for neurotransmitter synthesis and brain function.
+Carbohydrates,1.2,Supports stable blood glucose for brain energy.
+Fats,1.0,Needed for brain structure and signaling.
+Fiber,1.5,Supports gut-brain axis and microbial balance.
+Iron,1.0,Prevents fatigue and cognitive impairment.
+Calcium,1.0,Supports nerve signaling and brain development.
+Omega-3,2.5,"Critical for brain health, mood regulation, and reducing inflammation."
+Zinc,1.5,Essential for mood and memory; low levels linked to depression.
+Vitamin B12,1.5,Prevents cognitive decline and depression.
+Folate (B9),1.5,Supports mood and cognition; deficiency linked to depression.
+Vitamin C,1.0,Antioxidant; may buffer oxidative stress in the brain.
+Sugar (added),-1.5,Blood sugar spikes/crashes negatively affect mood and cognition.
+Saturated Fat,-1.0,Linked to brain inflammation and cognitive decline.
+Sodium,-0.8,"Excess linked to hypertension, which can affect cognitive health."

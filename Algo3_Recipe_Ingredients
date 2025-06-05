@@ -1,0 +1,74 @@
+import json
+from collections import Counter
+
+# Load JSON list
+with open('RecipeIngredients.json', 'r') as f:
+    recipes = json.load(f)
+
+ingredients_in_cart = {"Bok Choi", "spinach", "olive oil", "Chicken Thigh", "Beef Steaks", "Broccoli", "Prawns", "Salmon", "Green Peas", "Brioche", "Grapefruit",
+        "Medjool Dates"}
+
+# Common pantry items (normalized too)
+common_ingredients = {
+    "salt", "olive oil", "vegetable oil", "flour", "water", "sugar", "butter",
+    "black pepper", "eggs", "baking powder", "baking soda", "milk", "garlic",
+    "onion", "vanilla extract"
+}
+
+# Normalization rules
+variant_map = {
+    "onions": "onion",
+    "red onion": "onion",
+    "white onion": "onion",
+    "cold water": "water",
+    "warm water": "water",
+    "boiling water": "water",
+    "chopped garlic": "garlic",
+    "garlic cloves": "garlic",
+    "eggs": "egg",
+    "egg yolks": "egg",
+    "egg whites": "egg",
+    "tomatoes": "tomato",
+}
+
+def normalize_ingredient(ingredient):
+    ing = ingredient.lower().strip()
+    if ing in variant_map:
+        return variant_map[ing]
+    if ing.endswith('s') and ing[:-1] in common_ingredients:
+        return ing[:-1]  # crude plural strip
+    return ing
+
+# Normalize available ingredients too
+normalized_available = set(normalize_ingredient(i) for i in ingredients_in_cart)
+
+# Score recipes
+match_scores = []
+for recipe in recipes:
+    recipe_id = recipe["id"]
+    ingredients = [normalize_ingredient(i) for i in recipe["ingredients"]]
+    ingredients_set = set(ingredients)
+    matched = normalized_available & ingredients_set
+    missing = ingredients_set - normalized_available
+    match_scores.append({
+        "id": recipe_id,
+        "match_count": len(matched),
+        "missing": missing
+    })
+
+# Sort and analyze
+match_scores.sort(key=lambda x: (-x["match_count"], len(x["missing"])))
+top_matches = match_scores[:10]
+
+# Count missing ingredients
+missing_ingredient_counter = Counter()
+for match in top_matches:
+    missing_ingredient_counter.update(match["missing"])
+
+# Show results
+print("Suggested missing ingredients:")
+for ingredient, count in missing_ingredient_counter.most_common(10):
+    if ingredient in common_ingredients:
+        print(f"- ({ingredient}) — commonly in pantry, needed in {count} top recipes")
+    else:
+        print(f"- {ingredient} — needed in {count} top recipes")

@@ -1,0 +1,601 @@
+ingredient,count,category
+salt,7479,seasoning/spice
+butter,5122,cooking fat
+sugar,4281,sweetener
+onion,3473,aromatic vegetable
+eggs,3123,animal protein
+water,2943,
+olive_oil,2780,cooking fat
+flour,2392,grain/starch
+milk,2266,dairy
+garlic_cloves,2131,aromatic vegetable
+pepper,1988,vegetable
+brown_sugar,1598,sweetener
+baking_powder,1555,other
+egg,1473,animal protein
+allpurpose_flour,1436,grain/starch
+garlic,1342,aromatic vegetable
+vanilla,1280,other
+salt_and_pepper,1243,seasoning/spice
+baking_soda,1236,other
+parmesan_cheese,1205,dairy
+lemon_juice,1188,fruit
+cinnamon,1170,seasoning/spice
+vegetable_oil,1149,cooking fat
+sour_cream,1048,dairy
+black_pepper,1046,seasoning/spice
+vanilla_extract,1027,other
+tomatoes,1023,vegetable
+cream_cheese,953,dairy
+garlic_powder,910,other
+oil,904,cooking fat
+celery,876,herb
+garlic_clove,848,aromatic vegetable
+honey,797,sweetener
+onions,788,vegetable
+cheddar_cheese,733,dairy
+unsalted_butter,711,seasoning/spice
+chicken_broth,708,broth
+mayonnaise,684,other
+worcestershire_sauce,656,other
+fresh_parsley,648,herb
+extra_virgin_olive_oil,637,cooking fat
+parsley,636,herb
+chili_powder,631,other
+soy_sauce,630,other
+paprika,629,seasoning/spice
+cornstarch,595,grain/starch
+carrot,594,vegetable
+carrots,581,vegetable
+potatoes,561,grain/starch
+granulated_sugar,561,sweetener
+bacon,554,animal protein
+pecans,547,nuts
+fresh_ground_black_pepper,544,vegetable
+nutmeg,541,nuts
+ground_cinnamon,541,seasoning/spice
+lemon,527,fruit
+ground_beef,523,animal protein
+powdered_sugar,520,sweetener
+kosher_salt,513,seasoning/spice
+ground_cumin,507,seasoning/spice
+cayenne_pepper,506,vegetable
+margarine,504,cooking fat
+green_onion,500,vegetable
+walnuts,499,nuts
+heavy_cream,481,dairy
+red_onion,475,vegetable
+mozzarella_cheese,419,dairy
+dijon_mustard,418,other
+green_onions,418,vegetable
+raisins,417,fruit
+red_bell_pepper,412,vegetable
+fresh_lemon_juice,408,fruit
+zucchini,405,vegetable
+orange_juice,400,fruit
+green_pepper,393,vegetable
+tomato_sauce,391,vegetable
+canola_oil,373,cooking fat
+oregano,367,seasoning/spice
+cumin,353,seasoning/spice
+chicken_stock,352,broth
+dried_oregano,352,seasoning/spice
+tomato_paste,349,vegetable
+fresh_cilantro,345,herb
+diced_tomatoes,336,vegetable
+ground_black_pepper,329,seasoning/spice
+ketchup,326,other
+fresh_basil,324,seasoning/spice
+cilantro,320,herb
+ginger,313,aromatic vegetable
+boneless_skinless_chicken_breasts,308,animal protein
+lime_juice,306,fruit
+onion_powder,299,seasoning/spice
+buttermilk,299,dairy
+egg_whites,299,animal protein
+balsamic_vinegar,297,seasoning/spice
+fresh_ginger,295,aromatic vegetable
+vinegar,294,other
+whole_wheat_flour,290,grain/starch
+sea_salt,285,seasoning/spice
+red_wine_vinegar,283,seasoning/spice
+whipping_cream,281,dairy
+bananas,274,fruit
+cheese,274,dairy
+white_sugar,273,sweetener
+green_bell_pepper,267,vegetable
+bay_leaf,267,herb
+mushrooms,265,vegetable
+light_brown_sugar,265,sweetener
+shortening,261,
+fresh_ground_pepper,260,seasoning/spice
+dried_thyme,258,seasoning/spice
+nuts,257,nuts
+chicken_breasts,254,animal protein
+thyme,252,herb
+egg_yolks,252,animal protein
+black_beans,249,plant protein
+dried_basil,249,seasoning/spice
+confectioners_sugar,245,sweetener
+salsa,245,other
+ground_ginger,245,aromatic vegetable
+dry_white_wine,241,seasoning/spice
+basil,241,herb
+boiling_water,240,
+white_pepper,239,seasoning/spice
+salt_freshly_ground_black_pepper,237,seasoning/spice
+curry_powder,236,seasoning/spice
+ground_nutmeg,235,seasoning/spice
+breadcrumbs,229,grain/starch
+banana,226,fruit
+evaporated_milk,225,dairy
+crushed_red_pepper_flakes,223,seasoning/spice
+chocolate_chips,222,sweetener
+garlic_salt,221,seasoning/spice
+red_pepper,221,vegetable
+monterey_jack_cheese,219,dairy
+semisweet_chocolate_chips,218,sweetener
+sesame_oil,218,cooking fat
+dry_mustard,217,other
+scallions,214,aromatic vegetable
+white_vinegar,212,seasoning/spice
+cucumber,212,vegetable
+bay_leaves,211,Herb
+white_wine,210,seasoning/spice
+sharp_cheddar_cheese,210,dairy
+apples,210,fruit
+cider_vinegar,208,seasoning/spice
+red_pepper_flakes,207,vegetable
+chicken,205,animal protein
+lime,204,fruit
+lean_ground_beef,203,animal protein
+peanut_butter,203,cooking fat
+cream_of_mushroom_soup,200,dairy
+hot_sauce,197,other
+feta_cheese,195,dairy
+cream,194,dairy
+italian_seasoning,189,seasoning/spice
+yellow_onion,189,vegetable
+halfandhalf,187,
+avocado,183,fruit
+cooked_chicken,183,animal protein
+fresh_lime_juice,182,fruit
+shrimp,180,seafood
+shallots,178,aromatic vegetable
+lemon_zest,177,fruit
+fresh_thyme,175,seasoning/spice
+beef_broth,175,broth
+green_chilies,175,vegetable
+mushroom,174,vegetable
+cold_water,174,
+tabasco_sauce,173,other
+almond_extract,173,nuts
+ground_cloves,173,
+salt_pepper,172,vegetable
+maple_syrup,172,sweetener
+cocoa,172,other
+sweetened_condensed_milk,169,dairy
+cream_of_chicken_soup,167,animal protein
+skim_milk,167,dairy
+molasses,166,sweetener
+black_olives,166,vegetable
+shallot,164,aromatic vegetable
+cool_whip,164,
+sliced_mushrooms,164,vegetable
+fresh_mushrooms,163,vegetable
+lettuce,162,vegetable
+cooking_spray,162,cooking fat
+celery_ribs,161,herb
+cherry_tomatoes,160,vegetable
+corn,159,vegetable
+coconut,159,nuts
+cabbage,158,vegetable
+rice,157,grain/starch
+swiss_cheese,157,dairy
+flour_tortillas,157,grain/starch
+lemons,156,fruit
+apple,155,fruit
+rolled_oats,153,grain/starch
+bread,153,grain/starch
+almonds,152,nuts
+orange,150,fruit
+whole_milk,147,dairy
+ground_coriander,146,seasoning/spice
+boneless_skinless_chicken_breast_halves,143,animal protein
+broccoli,142,vegetable
+plain_yogurt,142,dairy
+chives,141,herb
+ham,141,animal protein
+warm_water,140,
+capers,140,seasoning/spice
+cocoa_powder,139,other
+crushed_pineapple,138,seasoning/spice
+potato,136,grain/starch
+bell_pepper,136,vegetable
+green_beans,135,plant protein
+pine_nuts,135,nuts
+sesame_seeds,135,nuts
+allspice,134,seasoning/spice
+cooked_rice,134,grain/starch
+spinach,134,vegetable
+red_potatoes,134,grain/starch
+strawberries,133,fruit
+coconut_milk,133,dairy
+seasoning_salt,133,seasoning/spice
+dark_brown_sugar,131,sweetener
+vegetable_broth,131,broth
+scallion,131,aromatic vegetable
+cayenne,131,seasoning/spice
+egg_white,130,animal protein
+applesauce,129,fruit
+orange_zest,129,fruit
+fresh_rosemary,128,herb
+frozen_peas,128,plant protein
+cornmeal,127,grain/starch
+red_wine,126,
+peanut_oil,125,cooking fat
+hot_pepper_sauce,123,vegetable
+rosemary,123,herb
+mustard,122,other
+turmeric,121,seasoning/spice
+sweet_potatoes,121,grain/starch
+sliced_almonds,120,nuts
+barbecue_sauce,120,other
+strawberry,119,fruit
+beer,119,
+flat_leaf_parsley,119,herb
+chickpeas,119,plant protein
+whipped_cream,118,dairy
+caster_sugar,118,sweetener
+dried_cranberries,118,fruit
+hot_water,118,
+ricotta_cheese,116,dairy
+icing_sugar,116,sweetener
+blueberries,115,fruit
+pure_vanilla_extract,114,other
+fresh_dill,113,herb
+egg_yolk,113,animal protein
+dry_sherry,112,
+pineapple_juice,111,fruit
+white_onion,111,vegetable
+light_corn_syrup,111,sweetener
+cooking_oil,109,cooking fat
+boneless_skinless_chicken_breast,109,animal protein
+graham_cracker_crumbs,108,animal protein
+slivered_almonds,107,nuts
+ice,107,
+coriander,107,herb
+red_onions,107,vegetable
+pumpkin,107,
+plain_flour,107,grain/starch
+kidney_beans,106,plant protein
+peanuts,106,nuts
+taco_seasoning,105,seasoning/spice
+of_fresh_mint,105,herb
+sweet_onion,105,vegetable
+rice_vinegar,104,grain/starch
+unsweetened_cocoa_powder,103,other
+prepared_mustard,103,other
+vanilla_ice_cream,103,dairy
+limes,103,fruit
+fish_sauce,103,other
+fresh_chives,102,herb
+low_sodium_chicken_broth,100,broth
+clove,100,aromatic vegetable
+vegetable_stock,99,broth
+green_peppers,99,vegetable
+white_wine_vinegar,98,other
+fresh_spinach,98,vegetable
+jalapeno,98,vegetable
+apple_cider_vinegar,98,fruit
+avocados,98,fruit
+jalapeno_pepper,97,vegetable
+french_bread,97,grain/starch
+plum_tomatoes,96,vegetable
+gingerroot,95,aromatic vegetable
+spaghetti,94,grain/starch
+shredded_cheddar_cheese,94,dairy
+asparagus,93,vegetable
+ground_turkey,92,animal protein
+crushed_tomatoes,91,vegetable
+pineapple,91,fruit
+grits,,grain/starch
+clam_juice,,seafood
+beef_stock,,broth
+potato_chips,,
+black_peppercorns,,
+cognac,,
+ice_cream,,dairy
+hot_fudge,,
+poultry_seasoning,,seasoning/spice
+prawns,,seafood
+cornflour,,grain/starch
+plantains,,vegetable
+leek,,vegetable
+grape_leaves,,herb
+cottage_cheese,,dairy
+corn_chips,,
+parsley_flakes,,seasoning/spice
+italian_cheese_blend,,dairy
+pasta_sauce,,other
+vanilla_bean,,other
+brandy,,alcohol
+superfine_sugar,,sweetener
+pizza_sauce,,other
+snow_peas,,vegetable
+ground_pork,,animal protein
+gorgonzola,,dairy
+arugula,,
+crema,,dairy
+mascarpone,,dairy
+cranberry_sauce,,other
+green_food_coloring,,other
+red_food_coloring,,other
+meat,,animal protein
+seasoning,,seasoning/spice
+bulgur,,grain/starch
+dates,,fruit
+mint_leaves,,herb
+horseradish_sauce,,vegetable
+ramen_noodles,,other
+sunflower_seeds,,nuts
+turkey,,animal protein
+coconut_extract,,fruit
+yellow_squash,,vegetable
+vegetables,,vegetable
+yogurt,,dairy
+pistachios,,nuts
+saffron,,seasoning/spice
+peppercorns,,seasoning/spice
+mace,,
+ghee,,cooking fat
+cashews,,nuts
+pinto_beans,,nuts
+soba_noodles,,other
+lime_peel,,
+corned_beef,,animal protein
+aubergine,,vegetable
+pancetta,,
+alfredo_sauce,,
+chicken_base,,
+sweet_chili_sauce,,
+corn_flakes,,
+rice_flour,,grain/starch
+candy_corn,,
+steak,,animal protein
+palm_sugar,,sweetener
+spring_onions,,aromatic vegetable
+blue_cheese_dressing,,
+lemon_extract,,
+eggplants,,vegetable
+cider,,
+salami,,animal protein
+mortadella,,
+tomato_juice,,
+quinoa,,grain/starch
+couscous,,grain/starch
+cinnamon_sticks,,seasoning/spice
+bourbon,,alcohol
+ham_bone,,animal protein
+pasta,,grain/starch
+eggplant,,vegetable
+mango,,fruit
+lime_zest,,fruit
+dashi,,
+lemon_peel,,fruit
+mango_chutney,,other
+wheat_germ,,
+salsa_verde,,
+cooked_turkey,,animal protein
+garam_masala,,
+chicken_thighs,,animal protein
+chile,,seasoning/spice
+leeks,,
+sweetcorn,,
+beets,,vegetable
+garbanzo_beans,,plant protein
+berries,,fruit
+pears,,fruit
+rocket,,vegetable
+tarragon,,seasoning/spice
+celery_salt,,seasoning/spice
+soup_mix,,broth
+coffee,,other
+ice_cubes,,
+oat_bran,,grain/starch
+sausage,,animal protein
+skewers,,animal protein
+ice_water,,
+lentils,,plant protein
+hoisin_sauce,,
+artichoke_hearts,,vegetable
+cherries,,fruit
+mangoes,,fruit
+ground_chicken,,animal protein
+mustard_seeds,,other
+jalapeno_peppers,,
+crisco,,
+pumpkin_seeds,,nuts
+refried_beans,,
+taco_shells,,other
+oats,,grain/starch
+salt_pork,,animal protein
+sauerkraut,,vegetable
+ginger_ale,,
+steak_sauce,,other
+roast_beef,,animal protein
+marinara_sauce,,
+amaretto,,
+nutella,,
+kaffir_lime_leaves,,fruit
+ginger_powder,,
+pork_chops,,animal protein
+pimiento,,
+catalina_dressing,,
+fennel_seeds,,nuts
+romano_cheese,,dairy
+orange_peel,,fruit
+rum,,
+root_beer,,
+peppermint_extract,,other
+grapeseed_oil,,cooking fat
+okra,,
+marinade,,
+almond_butter,,other
+smoked_salmon,,seafood
+brown_rice,,grain/starch
+bicarbonate_of_soda,,other
+apple_juice,,
+coconut_oil,,other
+almond_meal,,
+cauliflower,,vegetable
+mint,,herb
+cumin_powder,,seasoning/spice
+pork_tenderloin,,animal protein
+hamburger,,animal protein
+galangal,,aromatic vegetable
+lemongrass,,aromatic vegetable
+shrimp_paste,,seafood
+peas,,vegetable
+picante_sauce,,
+cajun_seasoning,,
+taco_seasoning_mix,,
+baking_mix,,other
+baguette,,
+spaghetti_sauce,,
+duck_breasts,,animal protein
+parsnips,,vegetable
+thyme_leaves,,herb
+jelly_powder,,
+cornbread_mix,,
+noodles,,
+spring_onion,,aromatic vegetable
+chestnuts,,nuts
+peaches,,fruit
+mashed_potatoes,,grain/starch
+scallops,,seafood
+cooked_pasta,,grain/starch
+apple_jelly,,
+pie_crust,,
+prosciutto,,animal protein
+tortilla_chips,,
+graham_crackers,,
+butternut_squash,,vegetable
+goat_cheese,,dairy
+mirin,,seasoning/spice
+cherry_pie_filling,,
+pumpkin_pie_spice,,
+duck,,animal protein
+duck_fat,,broth
+sourdough_bread,,
+walnut_oil,,
+squash,,
+puff_pastry,,
+bonito_flakes,,
+strawberry_jam,,
+whiskey,,alcohol
+hummus,,
+cream_of_coconut,,
+ladyfingers,,
+dream_whip,,
+corn_syrup,,
+olives,,
+sage,,
+sausages,,
+almond_flour,,grain/starch
+gnocchi,,grain/starch
+french_dressing,,
+liquid_smoke,,
+catsup,,
+pizza_dough,,
+roasted_red_peppers,,
+chilies,,
+popcorn,,
+kumara,,
+turmeric_powder,,
+cream_of_tartar,,
+garlic_paste,,
+lamb,,animal protein
+cloves,,
+calamari,,seafood
+gin,,alcohol
+vodka,,alcohol
+onion_soup_mix,,broth
+fusilli,,
+yeast,,other
+biscuits,,
+cranberries,,fruit
+grapes,,fruit
+whipped_topping,,
+bean_sprouts,,vegetable
+oysters,,seafood
+enchilada_sauce,,
+kielbasa,,
+guacamole,,
+key_lime_juice,,
+white_chocolate_chips,,
+parmigiano,,dairy
+figs,,fruit
+anchovy_paste,,
+tuna,,seafood
+cumin_seeds,,nuts
+dried_beef,,animal protein
+italian_dressing,,
+pork_loin,,animal protein
+soup,,
+tomatillos,,
+jalapenos,,
+cucumbers,,
+poblano_chiles,,
+fish_fillets,,seafood
+caraway_seed,,
+onion_salt,,
+chocolate,,
+grapefruit,,fruit
+pea_pods,,vegetable
+yams,,grain/starch
+plums,,fruit
+polenta,,grain/starch
+broth,,
+turkey_bacon,,animal protein
+smoked_paprika,,
+artichokes,,vegetable
+raspberry_preserves,,
+orange_blossom_water,,
+nutritional_yeast,,plant protein
+tofu,,plant protein
+chia_seeds,,nuts
+tortillas,,
+barley,,
+vanilla_wafers,,
+foie_gras,,animal protein
+ground_almonds,,
+caramel,,
+fava_beans,,
+pita_bread,,
+turnip,,
+kitchen_bouquet,,
+pancake_mix,,
+orange_rind,,
+honey_mustard,,
+waffles,,
+mincemeat,,animal protein
+grape_juice,,
+marshmallows,,
+caramels,,
+lemon_rind,,
+herbes_de_provence,,herb
+hominy,,
+creole_seasoning,,
+soya_sauce,,
+tomato_soup,,
+velveeta_cheese,,
+yoghurt,,
+dill,,
+vanilla_essence,,
+rotel_tomatoes,,
+marshmallow_creme,,
+chocolate_syrup,,
+endive,,
+radicchio,,
+lemon_pepper,,

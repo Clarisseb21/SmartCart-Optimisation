@@ -1,0 +1,1090 @@
+import pandas as pd
+import numpy as np
+import ml_clustering10_final as ml_clustering
+
+# -------------------------------
+# Configuration
+# -------------------------------
+SWAP_THRESHOLD = 0.05
+MAX_SWAPS = 5
+SUGGESTIONS_PER_ROUND = 5
+MAX_ALTERNATIVES_SHOW = 15
+TARGET_DAILY_WEIGHT = 400  # Target grams of food per day
+PANTRY_CARBS_PER_DAY = 200  # Assume 200g rice/pasta available at home per day
+DIVERSITY_BONUS_BETA = 0.05
+REDUNDANCY_DECAY_GAMMA = 0.7
+
+PORTION_SIZES = {
+    "seafood": 200, "meat": 150, "fruit": 1, "condiment": 15, "oil": 10,
+    "vegetable": 150, "carbohydrate": 80, "dairy": 150, "beverage": 250,
+    "herb": 2, "spice": 1, "seasoning": 1
+}
+
+# Global variable to store user food intentions
+FOOD_INTENTIONS = {}
+
+# Load data
+foods = pd.read_csv("Final _dataset.csv")
+weights = pd.read_csv("general_healthy_weights.csv")
+
+# Clean column names
+foods.columns = foods.columns.str.strip().str.lower()
+weights.columns = weights.columns.str.strip().str.lower()
+weights["nutrient"] = weights["nutrient"].str.strip().str.lower()
+
+# Nutrient mapping
+nutrient_name_map = {
+    "calories": "calories", "protein": "protein (g)", "carbohydrates": "carbohydrates (g)",
+    "fats": "fats (g)", "fiber": "fiber (g)", "iron": "iron (mg)",
+    "calcium": "calcium (mg)", "omega-3": "omega 3 (g)", "zinc": "zinc (mg)",
+    "vitamin b12": "vitamin b12 (mcg)", "folate (b9)": "folate (mcg)",
+    "vitamin c": "vitamin c (mg)", "sugar (added)": "sugars (g)",
+    "saturated fat": "saturated fats (g)", "sodium": "sodium (mg)"
+}
+
+nutrient_columns = [nutrient_name_map[n] for n in weights["nutrient"] if n in nutrient_name_map]
+nutrient_weights = {nutrient_name_map[n]: w for n, w in zip(weights["nutrient"], weights["weight"]) if n in nutrient_name_map}
+
+# Daily RDIs
+rdis_daily = {
+    "calories": 2000, "protein (g)": 45, "carbohydrates (g)": 250, "fats (g)": 78,
+    "fiber (g)": 30, "iron (mg)": 18, "calcium (mg)": 1000, "omega 3 (g)": 1.1,
+    "zinc (mg)": 8, "vitamin b12 (mcg)": 2.4, "folate (mcg)": 400, "vitamin c (mg)": 75,
+    "sugars (g)": 25, "saturated fats (g)": 24, "sodium (mg)": 2300
+}
+
+MINIMIZE_NUTRIENTS = {"sugars (g)", "saturated fats (g)", "sodium (mg)"}
+CONDIMENT_CATEGORIES = {"condiment", "oil", "spice", "seasoning", "sauce"}
+HOME_AVAILABLE_NUTRIENTS = {
+    "carbohydrates (g)": "🏠 Your cart doesn't have much carbohydrates. You likely have rice, pasta, bread, or potatoes at home."
+}
+
+def get_realistic_category(food_name, original_category):
+    """Map food items to more realistic categories for portion calculation"""
+    name_lower = str(food_name).lower()
+    category_lower = str(original_category).lower()
+    
+    herb_keywords = ['oregano', 'sage', 'thyme', 'rosemary', 'basil', 'parsley', 'cilantro', 'coriander', 'mint']
+    spice_keywords = ['cumin', 'paprika', 'turmeric', 'cinnamon', 'pepper', 'chili', 'curry', 'garam']
+    
+    for herb in herb_keywords:
+        if herb in name_lower:
+            return "herb"
+    
+    for spice in spice_keywords:
+        if spice in name_lower:
+            return "spice"
+    
+    if any(word in category_lower for word in ['herb', 'spice', 'seasoning']):
+        if 'herb' in category_lower:
+            return "herb"
+        elif 'spice' in category_lower:
+            return "spice"
+        else:
+            return "seasoning"
+    
+    return original_category
+
+def get_meal_configuration():
+    """Get number of meals from user and calculate targets"""
+    print("🍽️ Meal Planning Configuration")
+    print("-" * 40)
+    
+    while True:
+        try:
+            total_meals = int(input("How many meals total are you shopping for? (e.g., 12 for 4 days × 3 meals): "))
+            if total_meals <= 0:
+                print("Please enter a positive number of meals.")
+                continue
+            break
+        except ValueError:
+            print("Please enter a valid number.")
+    
+    while True:
+        try:
+            breakfast_size = int(input("How big is your breakfast compared to a regular meal? (30%, 60%, or 100%): ").strip().replace('%', ''))
+            if breakfast_size <= 0 or breakfast_size > 100:
+                print("Please enter a percentage between 1 and 100")
+                continue
+            break
+        except ValueError:
+            print("Please enter a valid percentage (e.g., 30, 60, 100)")
+    
+    while True:
+        try:
+            breakfast_count = int(input(f"How many breakfasts does this shop account for? "))
+            if breakfast_count < 0 or breakfast_count > total_meals:
+                print(f"Please enter a number between 0 and {total_meals}")
+                continue
+            break
+        except ValueError:
+            print("Please enter a valid number.")
+    
+    main_meals = total_meals - breakfast_count
+    breakfast_factor = breakfast_size / 100.0
+    effective_meal_count = (breakfast_count * breakfast_factor) + (main_meals * 1.0)
+    estimated_days = total_meals / 3
+    min_cart_weight = TARGET_DAILY_WEIGHT * (effective_meal_count / 3)
+    total_pantry_carbs = PANTRY_CARBS_PER_DAY * estimated_days
+    meal_factor = effective_meal_count / 3
+    rdis = {k: v * meal_factor for k, v in rdis_daily.items()}
+    
+    print(f"✅ Planning for {total_meals} meals ({breakfast_count} breakfasts at {breakfast_size}% size + {main_meals} main meals)")
+    print(f"📊 Effective meal count: {effective_meal_count:.1f} (breakfasts count as {breakfast_factor:.1f} each)")
+    print(f"📦 Target cart weight: {min_cart_weight:.0f}g (excluding condiments)")
+    print(f"🏠 Assuming {total_pantry_carbs:.0f}g total carbs from pantry")
+    
+    return total_meals, estimated_days, min_cart_weight, rdis, total_pantry_carbs
+
+def identify_dual_purpose_foods(food_name):
+    """Identify foods that serve multiple purposes"""
+    name_lower = str(food_name).lower()
+    
+    dual_purpose_mapping = {
+        'greek yogurt': ['yogurt', 'dairy'],
+        'greek yoghurt': ['yogurt', 'dairy'],
+        'cottage cheese': ['yogurt', 'dairy'],
+        'coconut milk': ['dairy alternative', 'cooking ingredient'],
+        'oat milk': ['dairy alternative', 'beverage'],
+        'cream cheese': ['dairy', 'condiment']
+    }
+    
+    for food_key, purposes in dual_purpose_mapping.items():
+        if food_key in name_lower:
+            return purposes
+    
+    return None
+
+def ask_user_intent_once(food_name, purposes):
+    """Ask user how they intend to use a dual-purpose food"""
+    print(f"\n🤔 How do you plan to use '{food_name}'?")
+    
+    purpose_descriptions = {
+        'yogurt': 'eating as yogurt (breakfast, snacks, desserts)',
+        'dairy': 'cooking/baking ingredient (sauces, marinades, baking)',
+        'dairy alternative': 'milk substitute (cereal, coffee, drinking)',
+        'cooking ingredient': 'cooking ingredient (curries, soups, sauces)',
+        'beverage': 'drinking beverage',
+        'condiment': 'spread or topping'
+    }
+    
+    for i, purpose in enumerate(purposes, 1):
+        description = purpose_descriptions.get(purpose, purpose)
+        print(f"{i}. As {description}")
+    
+    while True:
+        try:
+            choice = input(f"Enter choice (1-{len(purposes)}): ").strip()
+            choice_idx = int(choice) - 1
+            if 0 <= choice_idx < len(purposes):
+                selected_purpose = purposes[choice_idx]
+                print(f"✅ Got it! Using '{food_name}' as {purpose_descriptions.get(selected_purpose, selected_purpose)}")
+                return selected_purpose
+            else:
+                print(f"Please enter a number between 1 and {len(purposes)}")
+        except ValueError:
+            print("Please enter a valid number")
+
+def collect_all_food_intentions(cart):
+    """Collect intentions for all dual-purpose foods in cart at startup"""
+    global FOOD_INTENTIONS
+    
+    dual_purpose_foods = []
+    for _, item in cart.iterrows():
+        food_name = item['food name']
+        purposes = identify_dual_purpose_foods(food_name)
+        if purposes:
+            dual_purpose_foods.append((food_name, purposes))
+    
+    if dual_purpose_foods:
+        print(f"\n🎯 Food Usage Setup")
+        print("=" * 50)
+        print("Some items in your cart can be used in different ways.")
+        print("Let's set how you plan to use them (this affects nutritional categorization):")
+        print()
+        
+        for food_name, purposes in dual_purpose_foods:
+            if food_name.lower() not in FOOD_INTENTIONS:
+                selected_purpose = ask_user_intent_once(food_name, purposes)
+                FOOD_INTENTIONS[food_name.lower()] = selected_purpose
+        
+        print(f"\n✅ Food intentions set! These will be used throughout the optimization.")
+
+def get_portion_factor(row):
+    food_name = row.get("food name", "")
+    original_category = str(row.get("category", "")).strip().lower()
+    realistic_category = get_realistic_category(food_name, original_category)
+    base_portion = PORTION_SIZES.get(realistic_category, 100)
+    consumed = row.get("consumed_portion", 1)
+    return (base_portion / 100.0) * consumed
+
+def get_cart_totals(cart, total_pantry_carbs):
+    if cart.empty:
+        return {nutrient: 0 for nutrient in nutrient_columns}
+    
+    portion_factors = cart.apply(get_portion_factor, axis=1)
+    totals = {}
+    
+    for nutrient in nutrient_columns:
+        if nutrient in cart.columns:
+            values = cart[nutrient].fillna(0) * portion_factors
+            totals[nutrient] = values.sum()
+        else:
+            totals[nutrient] = 0
+    
+    # Add pantry carbohydrates assumption
+    if "carbohydrates (g)" in totals:
+        totals["carbohydrates (g)"] += total_pantry_carbs
+        if "calories" in totals:
+            totals["calories"] += total_pantry_carbs * 3.5
+    
+    return totals
+
+def get_cart_weight(cart):
+    """Calculate total cart weight excluding condiments"""
+    if cart.empty:
+        return 0.0
+    
+    total_weight = 0.0
+    for _, item in cart.iterrows():
+        category = str(item.get("category", "")).strip().lower()
+        if category in CONDIMENT_CATEGORIES:
+            continue
+        portion_factor = get_portion_factor(item)
+        item_weight = portion_factor * 100
+        total_weight += item_weight
+    
+    return total_weight
+
+def calculate_min_cart_items(cart, min_cart_weight):
+    """Calculate minimum cart items based on portion weights"""
+    current_weight = get_cart_weight(cart)
+    
+    if current_weight >= min_cart_weight:
+        return len(cart), True
+    
+    if len(cart) > 0:
+        non_condiment_items = [item for _, item in cart.iterrows() 
+                              if str(item.get("category", "")).strip().lower() not in CONDIMENT_CATEGORIES]
+        if non_condiment_items:
+            avg_weight_per_item = current_weight / len(non_condiment_items)
+            if avg_weight_per_item > 0:
+                estimated_items_needed = int((min_cart_weight - current_weight) / avg_weight_per_item) + len(cart)
+                return estimated_items_needed, False
+    
+    return int(min_cart_weight / 150) + 2, False
+
+def get_cart_price(cart):
+    """Calculate total cart price"""
+    if cart.empty:
+        return 0.0
+    
+    total_price = 0.0
+    for _, item in cart.iterrows():
+        price = item.get('price (gbp)', 0)
+        if pd.notna(price):
+            total_price += float(price)
+    
+    return total_price
+
+def nutrient_adequacy_score(current_total, target_rdi, nutrient_name):
+    """Calculate adequacy score for a nutrient"""
+    if target_rdi <= 0:
+        return 1.0
+    
+    ratio = current_total / target_rdi
+    
+    if nutrient_name in MINIMIZE_NUTRIENTS:
+        if ratio <= 1:
+            return 1.0 - ratio
+        else:
+            return max(-1.0, 1.0 - ratio)
+    else:
+        if nutrient_name in HOME_AVAILABLE_NUTRIENTS:
+            if ratio <= 0.3:
+                return 0.7
+            elif ratio <= 0.8:
+                return 0.7 + (ratio - 0.3) * 0.6
+            elif ratio <= 1.2:
+                return 1.0
+            elif ratio <= 1.8:
+                return 1.0 - (ratio - 1.2) * 0.3
+            else:
+                return max(0.4, 0.82 - (ratio - 1.8) * 0.2)
+        else:
+            if ratio <= 0.5:
+                return ratio * 2 * 0.6
+            elif ratio <= 1.0:
+                return 0.6 + (ratio - 0.5) * 0.8
+            elif ratio <= 1.5:
+                return 1.0 - (ratio - 1.0) * 0.4
+            else:
+                return max(0.2, 0.8 - (ratio - 1.5) * 0.3)
+
+def cart_score_fixed(cart, target_rdis, total_pantry_carbs):
+    totals = get_cart_totals(cart, total_pantry_carbs)
+    adequacy_scores = []
+    
+    for nutrient in nutrient_columns:
+        current = totals.get(nutrient, 0)
+        target = target_rdis.get(nutrient, 1)
+        weight = nutrient_weights.get(nutrient, 1)
+        adequacy = nutrient_adequacy_score(current, target, nutrient)
+        weighted_adequacy = adequacy * weight
+        adequacy_scores.append(weighted_adequacy)
+    
+    if adequacy_scores:
+        avg_adequacy = sum(adequacy_scores) / len(adequacy_scores)
+        return max(0, avg_adequacy * 10)
+    else:
+        return 0
+
+def create_nutrient_summary(initial_totals, final_totals, rdis):
+    """Create a summary of nutrient changes"""
+    print("\n📈 Nutrient Optimization Summary:")
+    print("-" * 60)
+    
+    improvements = []
+    declines = []
+    
+    for nutrient in nutrient_columns:
+        initial = initial_totals.get(nutrient, 0)
+        final = final_totals.get(nutrient, 0)
+        target = rdis.get(nutrient, 1)
+        
+        if initial == 0:
+            continue
+            
+        change_amount = final - initial
+        change_percent = (change_amount / initial) * 100 if initial > 0 else 0
+        final_rdi_percent = (final / target) * 100 if target > 0 else 0
+        
+        if abs(change_percent) > 5:
+            nutrient_name = nutrient.split('(')[0].strip().title()
+            
+            if change_percent > 0:
+                improvements.append({
+                    'name': nutrient_name,
+                    'change_percent': change_percent,
+                    'rdi_percent': final_rdi_percent,
+                    'is_minimize': nutrient in MINIMIZE_NUTRIENTS
+                })
+            else:
+                declines.append({
+                    'name': nutrient_name,
+                    'change_percent': change_percent,
+                    'rdi_percent': final_rdi_percent,
+                    'is_minimize': nutrient in MINIMIZE_NUTRIENTS
+                })
+    
+    if improvements:
+        print("✅ Improvements:")
+        improvements.sort(key=lambda x: x['change_percent'], reverse=True)
+        for item in improvements[:8]:
+            status = "reduced to" if item['is_minimize'] else "increased to"
+            emoji = "⬇️" if item['is_minimize'] else "⬆️"
+            print(f"   {emoji} {item['name']}: {status} {item['rdi_percent']:.0f}% of RDI ({item['change_percent']:+.0f}%)")
+    
+    concerning_declines = [d for d in declines if not d['is_minimize'] and abs(d['change_percent']) > 10]
+    if concerning_declines:
+        print("\n⚠️ Notable Decreases:")
+        for item in concerning_declines[:5]:
+            print(f"   ⬇️ {item['name']}: decreased to {item['rdi_percent']:.0f}% of RDI ({item['change_percent']:+.0f}%)")
+    
+    if not improvements and not concerning_declines:
+        print("   No significant nutrient changes detected.")
+
+def check_cart_completeness(cart, min_cart_weight, total_meals):
+    """Check if cart has enough items and variety based on weight"""
+    issues = []
+    
+    current_weight = get_cart_weight(cart)
+    min_items_needed, is_adequate = calculate_min_cart_items(cart, min_cart_weight)
+    
+    if not is_adequate:
+        issues.append(f"⚖️ Your cart has {current_weight:.0f}g of food (excluding condiments). Consider adding more items to reach {min_cart_weight:.0f}g for {total_meals} meals.")
+        issues.append(f"📦 Estimated items needed: ~{min_items_needed} total items (you have {len(cart)})")
+    
+    if 'category' in cart.columns:
+        categories = cart['category'].str.lower().str.strip().unique()
+        categories = [cat for cat in categories if pd.notna(cat)]
+        
+        essential_categories = ['protein', 'vegetable', 'fruit']
+        missing_categories = []
+        
+        for essential in essential_categories:
+            found = any(essential in cat.lower() if pd.notna(cat) else False for cat in cart['category'])
+            if not found:
+                missing_categories.append(essential)
+        
+        if missing_categories:
+            issues.append(f"🍽️ Consider adding items from these food groups: {', '.join(missing_categories)}")
+    
+    return issues
+
+def compute_food_score(food, cart_totals, nutrient_weights, rdis, category_counts=None):
+    score_s = 0
+    new_nutrients = 0
+    contributions = []
+
+    for nutrient in nutrient_weights:
+        x_i = food.get(nutrient, 0)
+        c_i = cart_totals.get(nutrient, 0)
+        dv_i = rdis.get(nutrient, 1)
+        need = max(dv_i - c_i, 1e-6)
+
+        ratio = min(x_i / need, 1)
+        contrib = nutrient_weights[nutrient] * ratio
+        score_s += contrib
+        contributions.append((nutrient, contrib))
+
+        if c_i / dv_i < 0.1 and x_i > 0:
+            new_nutrients += 1
+
+    D = 1 + DIVERSITY_BONUS_BETA * new_nutrients
+    category = str(food.get("category", "")).strip().lower()
+    count_in_cart = category_counts.get(category, 0) if category_counts else 0
+    R = REDUNDANCY_DECAY_GAMMA ** count_in_cart
+    score = score_s * D * R
+    top_contributions = sorted(contributions, key=lambda x: x[1], reverse=True)[:3]
+
+    return score, top_contributions
+
+def get_all_alternatives_for_item(item, all_foods, current_cart=None, rdis=None, total_pantry_carbs=0):
+    """Get alternatives for an item using the ML clustering system"""
+    original_name = item["food name"]
+    suggestions = ml_clustering.suggest_store_foods(original_name, topn=MAX_ALTERNATIVES_SHOW)
+    suggested_names = [s['store_name'].lower() for s in suggestions]
+    alternatives = all_foods[all_foods["food name"].str.lower().isin(suggested_names)].copy()
+
+    if alternatives.empty or current_cart is None:
+        return []
+
+    old_score = cart_score_fixed(current_cart, rdis, total_pantry_carbs)
+    alt_swaps = []
+
+    item_idx = next((idx for idx, row in current_cart.iterrows()
+                     if row["food name"].lower() == original_name.lower()), None)
+
+    category_counts = current_cart['category'].str.strip().str.lower().value_counts().to_dict()
+
+    if item_idx is not None:
+        for _, alt in alternatives.iterrows():
+            new_cart = current_cart.copy()
+            alt_copy = alt.copy()
+            alt_copy["consumed_portion"] = item.get("consumed_portion", 1)
+            new_cart.iloc[item_idx] = alt_copy
+
+            new_cart_totals = get_cart_totals(new_cart, total_pantry_carbs)
+            score, top_contributions = compute_food_score(alt_copy, new_cart_totals, nutrient_weights, rdis, category_counts)
+            new_score = cart_score_fixed(new_cart, rdis, total_pantry_carbs)
+            gain = new_score - old_score
+
+            if gain > SWAP_THRESHOLD:
+                alt_swaps.append({
+                    'alternative': alt_copy,
+                    'gain': gain,
+                    'efficiency': gain / alt.get('price (gbp)', 0.01),
+                    'original_idx': item_idx,
+                    'sdr_score': score,
+                    'top_contributions': top_contributions
+                })
+
+    alt_swaps.sort(key=lambda x: x['gain'], reverse=True)
+    return alt_swaps
+
+def get_top_swap_suggestions(cart, all_foods, rdis, total_pantry_carbs):
+    """Get top swap suggestions across all items in the cart"""
+    all_swaps = []
+    
+    for idx, item in cart.iterrows():
+        alternatives = get_all_alternatives_for_item(item, all_foods, cart, rdis, total_pantry_carbs)
+        
+        if alternatives:
+            best_alt = alternatives[0]
+            all_swaps.append({
+                'original_item': item,
+                'original_index': idx,
+                'best_alternative': best_alt['alternative'],
+                'gain': best_alt['gain'],
+                'efficiency': best_alt['efficiency'],
+                'all_alternatives': alternatives,
+                'swap_text': f"{item['food name']} → {best_alt['alternative']['food name']}"
+            })
+    
+    all_swaps.sort(key=lambda x: x['gain'], reverse=True)
+    return all_swaps
+
+def display_simple_swap_suggestions(swap_suggestions, show_count=SUGGESTIONS_PER_ROUND):
+    """Display simplified swap suggestions"""
+    print(f"\n💡 Top swap suggestions:")
+    print("-" * 60)
+    
+    displayed_swaps = swap_suggestions[:show_count]
+    
+    for i, swap in enumerate(displayed_swaps, 1):
+        original = swap['original_item']
+        alternative = swap['best_alternative']
+        gain = swap['gain']
+        efficiency = swap['efficiency']
+        
+        print(f"{i}. {original['food name']} → {alternative['food name']}")
+        print(f"   Score gain: +{gain:.3f} | Efficiency: {efficiency:.3f}")
+        print(f"   Price: £{original.get('price (gbp)', 0):.2f} → £{alternative.get('price (gbp)', 0):.2f}")
+        
+        key_nutrients = ["protein (g)", "fiber (g)", "vitamin c (mg)", "iron (mg)", "omega 3 (g)"]
+        improvements = []
+        
+        for nutrient in key_nutrients:
+            if nutrient in original and nutrient in alternative:
+                orig_val = original.get(nutrient, 0) or 0
+                alt_val = alternative.get(nutrient, 0) or 0
+                if alt_val > orig_val * 1.2:
+                    improvements.append(f"{nutrient.split('(')[0].strip()}: +{alt_val - orig_val:.1f}")
+        
+        if improvements:
+            print(f"   Key improvements: {' | '.join(improvements[:3])}")
+        print()
+    
+    return displayed_swaps
+
+def print_cart_analysis(cart, scaled_rdis, total_pantry_carbs, total_meals):
+    """Print detailed nutritional analysis with total price"""
+    totals = get_cart_totals(cart, total_pantry_carbs)
+    total_price = get_cart_price(cart)
+    
+    print(f"\n💰 Total Cart Price: £{total_price:.2f}")
+    print(f"🍽️ Covers {total_meals} meals | 🏠 Includes {total_pantry_carbs:.0f}g carbs from pantry")
+    print("\n📊 Cart Nutritional Analysis:")
+    print("-" * 50)
+    
+    home_recommendations = []
+    
+    for nutrient in nutrient_columns:
+        current = totals.get(nutrient, 0)
+        target = scaled_rdis.get(nutrient, 1)
+        percentage = (current / target) * 100 if target > 0 else 0
+        adequacy = nutrient_adequacy_score(current, target, nutrient)
+        
+        if nutrient in MINIMIZE_NUTRIENTS:
+            if percentage > 100:
+                status_icon = "🔴"
+            elif percentage > 80:
+                status_icon = "⚠️ "
+            else:
+                status_icon = "✅"
+        else:
+            if nutrient in HOME_AVAILABLE_NUTRIENTS:
+                if percentage < 30:
+                    status_icon = "⚠️ "
+                elif percentage < 50:
+                    status_icon = "🟡"
+                else:
+                    status_icon = "✅"
+            else:
+                if percentage < 50:
+                    status_icon = "🔴"
+                elif percentage < 80 or percentage > 150:
+                    status_icon = "⚠️ "
+                else:
+                    status_icon = "✅"
+        
+        print(f"{status_icon} {nutrient:20}: {current:6.1f}/{target:6.1f} ({percentage:5.1f}%) - Score: {adequacy:.2f}")
+        
+        if nutrient in HOME_AVAILABLE_NUTRIENTS and percentage < 60:
+            home_recommendations.append(HOME_AVAILABLE_NUTRIENTS[nutrient])
+    
+    if home_recommendations:
+        print("\n💡 Home Pantry Recommendations:")
+        print("-" * 50)
+        for rec in home_recommendations:
+            print(f"{rec}")
+
+def interactive_optimization_round(cart, food_df, rdis, total_pantry_carbs, min_cart_weight, max_suggestions_per_round=5, max_initial_rounds=5):
+    """Interactive optimization with user input"""
+    swapped_indices = set()
+    item_alt_index = {}
+
+    def run_rounds(start_round, end_round):
+        nonlocal cart, swapped_indices, item_alt_index
+        for round_num in range(start_round, end_round + 1):
+            print(f"\n🔄 Optimization Round {round_num}")
+
+            all_alternatives = {}
+            for idx, item in cart.iterrows():
+                if idx in swapped_indices:
+                    continue
+
+                suggestions = get_all_alternatives_for_item(item, food_df, current_cart=cart, rdis=rdis, total_pantry_carbs=total_pantry_carbs)
+                if suggestions:
+                    sorted_suggestions = sorted(suggestions, key=lambda x: x['gain'], reverse=True)
+                    all_alternatives[idx] = sorted_suggestions
+                    if idx not in item_alt_index:
+                        item_alt_index[idx] = 0
+
+            if not all_alternatives:
+                print("✅ No more beneficial swaps available!")
+                return cart
+
+            candidate_items = [
+                (idx, alts[item_alt_index[idx]])
+                for idx, alts in all_alternatives.items()
+                if item_alt_index[idx] < len(alts)
+            ]
+
+            top_items = sorted(candidate_items, key=lambda x: x[1]['gain'], reverse=True)[:max_suggestions_per_round]
+
+            if not top_items:
+                print("✅ No more viable suggestions to show.")
+                return cart
+
+            print(f"\n💡 Top swap suggestions (1 per item):")
+            for i, (idx, suggestion) in enumerate(top_items, start=1):
+                old = cart.iloc[idx]
+                alt = suggestion['alternative']
+                print(f"{i}. {old['food name']} → {alt['food name']} | Gain: {suggestion['gain']:.3f} | £{old['price (gbp)']:.2f} → £{alt['price (gbp)']:.2f}")
+
+                top_nutrients = ["protein (g)", "fiber (g)", "vitamin c (mg)", "iron (mg)", "omega 3 (g)", "calcium (mg)", "folate (mcg)"]
+                gains = []
+                for nutrient in top_nutrients:
+                    if nutrient in alt and nutrient in old:
+                        old_val = old.get(nutrient, 0) or 0
+                        new_val = alt.get(nutrient, 0) or 0
+                        diff = new_val - old_val
+                        if diff > 0:
+                            unit = nutrient[nutrient.find("(")+1 : nutrient.find(")")]
+                            name = nutrient.split("(")[0].strip().title()
+                            gains.append(f"{name}: +{diff:.1f}{unit}")
+                if gains:
+                    print(f"   🥕 Nutrient Gains: {' | '.join(gains[:3])}")
+
+            print("\nType a number to accept swap, 'more (n)' to see another option, or 'skip' to finish.")
+            choice = input("Your choice: ").strip().lower()
+
+            if choice == "skip":
+                print("🛑 Optimization stopped by user.")
+                return cart
+
+            if choice.startswith("more"):
+                try:
+                    n = int(choice.split("(")[1].split(")")[0]) - 1
+                    if 0 <= n < len(top_items):
+                        idx = top_items[n][0]
+                        item_alt_index[idx] += 1
+                        if item_alt_index[idx] >= len(all_alternatives[idx]):
+                            print(f"❌ No more suggestions for item {n+1}.")
+                            item_alt_index[idx] = len(all_alternatives[idx]) - 1
+                    else:
+                        print("❌ Invalid item number.")
+                except:
+                    print("❌ Invalid input format. Use e.g. 'more (2)'.")
+                continue
+
+            elif choice.isdigit():
+                selected_idx = int(choice) - 1
+                if 0 <= selected_idx < len(top_items):
+                    cart_idx, suggestion = top_items[selected_idx]
+                    cart.iloc[cart_idx] = suggestion['alternative']
+                    swapped_indices.add(cart_idx)
+                    item_alt_index.pop(cart_idx, None)
+                    print(f"✅ Swapped item → {suggestion['alternative']['food name']}")
+                else:
+                    print("❌ Invalid choice.")
+            else:
+                print("❌ Invalid input.")
+        return cart
+
+    cart = run_rounds(1, max_initial_rounds)
+
+    more = input("\n🔁 Do you want to run more optimization rounds? (yes/no): ").strip().lower()
+    if more in {"yes", "y"}:
+        cart = run_rounds(max_initial_rounds + 1, max_initial_rounds + 5)
+
+    return cart
+
+def identify_nutrient_gaps(cart_totals, rdis, gap_threshold=0.30):
+    """Identify nutrients that are significantly below RDI targets"""
+    nutrient_gaps = []
+    
+    for nutrient in nutrient_columns:
+        if nutrient in MINIMIZE_NUTRIENTS:
+            continue
+            
+        current = cart_totals.get(nutrient, 0)
+        target = rdis.get(nutrient, 1)
+        percentage = (current / target) if target > 0 else 0
+        
+        is_home_available = nutrient in HOME_AVAILABLE_NUTRIENTS
+        
+        if percentage < gap_threshold and not is_home_available:
+            gap_amount = target - current
+            nutrient_gaps.append({
+                'nutrient': nutrient,
+                'current': current,
+                'target': target,
+                'percentage': percentage,
+                'gap_amount': gap_amount,
+                'priority': 1 - percentage
+            })
+    
+    nutrient_gaps.sort(key=lambda x: x['priority'], reverse=True)
+    return nutrient_gaps
+
+def find_gap_filling_foods(nutrient_gaps, all_foods, cart, max_suggestions=5):
+    """Find foods that efficiently fill nutrient gaps"""
+    if not nutrient_gaps:
+        return []
+    
+    current_categories = set(cart['category'].str.lower().str.strip()) if 'category' in cart.columns else set()
+    
+    food_scores = []
+    
+    REALISTIC_CATEGORIES = {
+        'protein', 'meat', 'seafood', 'dairy', 'vegetable', 'fruit', 
+        'legume', 'grain', 'nut', 'seed', 'bread', 'cereal'
+    }
+    
+    MICRO_ONLY_CATEGORIES = {'herb', 'spice', 'seasoning', 'condiment'}
+    
+    for _, food in all_foods.iterrows():
+        if food['food name'].lower() in cart['food name'].str.lower().values:
+            continue
+            
+        food_category = str(food.get('category', '')).lower().strip()
+        
+        has_major_gaps = any(gap['nutrient'] in ['fiber (g)', 'protein (g)', 'carbohydrates (g)', 'fats (g)'] 
+                           for gap in nutrient_gaps[:3])
+        
+        if has_major_gaps and food_category in MICRO_ONLY_CATEGORIES:
+            continue
+        
+        portion_factor = get_portion_factor(food)
+        realistic_portion = portion_factor * 100
+        
+        if realistic_portion < 50 and food_category in MICRO_ONLY_CATEGORIES:
+            continue
+            
+        nutrient_score = 0
+        gap_contributions = []
+        
+        for gap in nutrient_gaps[:5]:
+            nutrient = gap['nutrient']
+            gap_amount = gap['gap_amount']
+            gap_priority = gap['priority']
+            
+            food_amount_per_100g = food.get(nutrient, 0) or 0
+            food_amount_actual = food_amount_per_100g * (realistic_portion / 100)
+            
+            if food_amount_actual > 0:
+                gap_fill_ratio = min(food_amount_actual / gap_amount, 1.0)
+                min_threshold = 0.10 if nutrient in ['fiber (g)', 'protein (g)'] else 0.05
+                
+                if gap_fill_ratio > min_threshold:
+                    contribution = gap_fill_ratio * gap_priority
+                    nutrient_score += contribution
+                    
+                    gap_contributions.append({
+                        'nutrient': nutrient,
+                        'amount': food_amount_actual,
+                        'gap_fill_ratio': gap_fill_ratio
+                    })
+        
+        category_count = sum(1 for cat in current_categories if cat == food_category)
+        
+        if food_category in REALISTIC_CATEGORIES:
+            diversity_bonus = 0.3 / (1 + category_count)
+        else:
+            diversity_bonus = 0.1 / (1 + category_count)
+        
+        final_score = nutrient_score + diversity_bonus
+        min_score_threshold = 0.15
+        
+        if final_score > min_score_threshold:
+            price = food.get('price (gbp)', 0.01)
+            
+            food_scores.append({
+                'food': food,
+                'score': final_score,
+                'nutrient_score': nutrient_score,
+                'gap_contributions': gap_contributions,
+                'diversity_bonus': diversity_bonus,
+                'price': price,
+                'category': food_category,
+                'portion_grams': realistic_portion
+            })
+    
+    def sort_key(x):
+        category_preference = 1.0 if x['category'] in REALISTIC_CATEGORIES else 0.5
+        return (x['nutrient_score'] * category_preference, -x['price'])
+    
+    food_scores.sort(key=sort_key, reverse=True)
+    return food_scores[:max_suggestions*2]
+
+def display_gap_filling_suggestions(gap_foods, nutrient_gaps):
+    """Display suggested foods to fill nutrient gaps"""
+    print(f"\n💊 Suggested additions to fill nutrient gaps:")
+    print("-" * 60)
+    
+    if not gap_foods:
+        print("❌ No realistic foods found to fill nutrient gaps!")
+        print("💡 Try adding more fruits, vegetables, whole grains, or protein sources manually.")
+        return
+    
+    for i, suggestion in enumerate(gap_foods, 1):
+        food = suggestion['food']
+        contributions = suggestion['gap_contributions']
+        nutrient_score = suggestion['nutrient_score']
+        price = suggestion['price']
+        portion_grams = suggestion.get('portion_grams', 100)
+        
+        print(f"{i}. {food['food name']}")
+        print(f"   Category: {food.get('category', 'Unknown')} | Price: £{price:.2f}")
+        print(f"   Typical portion: {portion_grams:.0f}g | Nutrition Impact: {nutrient_score:.2f}")
+        
+        top_contributions = sorted(contributions, key=lambda x: x['gap_fill_ratio'], reverse=True)[:3]
+        if top_contributions:
+            contrib_text = []
+            for contrib in top_contributions:
+                nutrient_name = contrib['nutrient'].split('(')[0].strip().title()
+                fill_percent = contrib['gap_fill_ratio'] * 100
+                amount = contrib['amount']
+                contrib_text.append(f"{nutrient_name}: {amount:.1f} ({fill_percent:.0f}% of gap)")
+            print(f"   Key nutrients: {' | '.join(contrib_text)}")
+        print()
+
+def filter_realistic_gap_foods(gap_foods, nutrient_gaps):
+    """Filter out unrealistic suggestions"""
+    filtered_foods = []
+    
+    for suggestion in gap_foods:
+        food = suggestion['food']
+        category = suggestion['category']
+        portion_grams = suggestion['portion_grams']
+        
+        if suggestion['price'] > 8.0 and suggestion['nutrient_score'] < 0.3:
+            continue
+        
+        major_nutrients = ['fiber (g)', 'protein (g)', 'carbohydrates (g)', 'fats (g)']
+        has_major_contribution = any(
+            contrib['nutrient'] in major_nutrients and contrib['gap_fill_ratio'] > 0.1
+            for contrib in suggestion['gap_contributions']
+        )
+        
+        if has_major_contribution and category in {'herb', 'spice', 'seasoning'}:
+            continue
+        
+        price_per_gram = suggestion['price'] / max(portion_grams, 1)
+        if price_per_gram > 0.05 and category in {'herb', 'spice'} and portion_grams < 20:
+            continue
+        
+        filtered_foods.append(suggestion)
+    
+    return filtered_foods[:6]
+
+def ask_for_gap_additions(cart, all_foods, rdis, total_pantry_carbs, gap_threshold=0.30, target_threshold=0.60):
+    """Main function to handle nutrient gap additions with multiple rounds"""
+    round_count = 0
+    max_rounds = 3
+    
+    while round_count < max_rounds:
+        cart_totals = get_cart_totals(cart, total_pantry_carbs)
+        nutrient_gaps = identify_nutrient_gaps(cart_totals, rdis, gap_threshold)
+        
+        if not nutrient_gaps:
+            if round_count == 0:
+                print(f"\n✅ Great! No major nutrient gaps detected (all shop-required nutrients above {gap_threshold*100:.0f}% RDI)")
+                print("💡 Note: Some nutrients may be low but are typically available from home pantry")
+            else:
+                print(f"\n✅ All critical nutrient gaps have been addressed!")
+            return cart
+        
+        # Check if we should continue - are there still significant gaps?
+        significant_gaps = [gap for gap in nutrient_gaps if gap['percentage'] < target_threshold]
+        if not significant_gaps and round_count > 0:
+            print(f"\n✅ All nutrients are now above {target_threshold*100:.0f}% RDI. Gap filling complete!")
+            return cart
+        
+        round_suffix = f" (Round {round_count + 1})" if round_count > 0 else ""
+        print(f"\n⚠️  Nutrient Gap Analysis{round_suffix} (below {gap_threshold*100:.0f}% RDI):")
+        print("-" * 50)
+        for gap in nutrient_gaps[:5]:
+            nutrient_name = gap['nutrient'].split('(')[0].strip().title()
+            current_percent = gap['percentage']*100
+            print(f"   • {nutrient_name}: {current_percent:.1f}% of RDI (need {gap['gap_amount']:.1f} more)")
+        
+        if round_count == 0:
+            print(f"\n💡 Note: Suggestions prioritize nutritional impact over price efficiency")
+        
+        if round_count > 0:
+            want_more = input(f"\n🤔 Continue adding foods to improve these nutrients? (yes/no): ").strip().lower()
+        else:
+            want_more = input(f"\n🤔 Would you like suggestions for foods to add that address these gaps? (yes/no): ").strip().lower()
+        
+        if want_more not in ['yes', 'y']:
+            print("📝 Skipping further gap-filling suggestions.")
+            return cart
+        
+        gap_foods = find_gap_filling_foods(nutrient_gaps, all_foods, cart)
+        gap_foods = filter_realistic_gap_foods(gap_foods, nutrient_gaps)
+        
+        if not gap_foods:
+            print("❌ No suitable foods found to fill the remaining nutrient gaps.")
+            return cart
+        
+        display_gap_filling_suggestions(gap_foods, nutrient_gaps)
+        
+        max_selections = 2 if round_count == 0 else 1  # Fewer selections in later rounds
+        print(f"You can select up to {max_selections} food{'s' if max_selections > 1 else ''} to add to your cart.")
+        print("Enter numbers separated by spaces (e.g., '1 3'), or 'none' to skip:")
+        
+        choice = input("Your selection: ").strip().lower()
+        
+        if choice == 'none':
+            print("📝 No foods added.")
+            return cart
+        
+        try:
+            selected_indices = [int(x.strip()) - 1 for x in choice.split()]
+            selected_indices = [i for i in selected_indices if 0 <= i < len(gap_foods)]
+            
+            if len(selected_indices) > max_selections:
+                print(f"⚠️ Maximum {max_selections} selection{'s' if max_selections > 1 else ''} allowed. Taking first {max_selections}.")
+                selected_indices = selected_indices[:max_selections]
+            
+            if not selected_indices:
+                print("❌ No valid selections made.")
+                return cart
+            
+            added_foods = []
+            for idx in selected_indices:
+                selected_food = gap_foods[idx]['food'].copy()
+                selected_food['consumed_portion'] = 1.0
+                cart = pd.concat([cart, selected_food.to_frame().T], ignore_index=True)
+                added_foods.append(selected_food['food name'])
+            
+            print(f"\n✅ Added to cart: {', '.join(added_foods)}")
+            
+            new_totals = get_cart_totals(cart, total_pantry_carbs)
+            print(f"\n📊 Updated nutrient status:")
+            for gap in nutrient_gaps[:5]:
+                nutrient = gap['nutrient']
+                old_percentage = gap['percentage'] * 100
+                new_current = new_totals.get(nutrient, 0)
+                new_percentage = (new_current / gap['target']) * 100 if gap['target'] > 0 else 0
+                improvement = new_percentage - old_percentage
+                
+                nutrient_name = nutrient.split('(')[0].strip().title()
+                print(f"   • {nutrient_name}: {old_percentage:.1f}% → {new_percentage:.1f}% (+{improvement:.1f}%)")
+            
+            round_count += 1
+            
+        except ValueError:
+            print("❌ Invalid input format. No foods added.")
+            return cart
+    
+    print(f"\n⏹️ Maximum {max_rounds} rounds of gap filling completed.")
+    return cart
+
+def main_interactive():
+    """Main interactive function"""
+    # Get meal configuration
+    total_meals, estimated_days, min_cart_weight, rdis, total_pantry_carbs = get_meal_configuration()
+    
+    # Load cart
+    cart_names = [
+        "Apricots (4 pack) - Organic Brand", 
+"Vanilla Yoghurt", 
+"Raspberries - Organic Brand", 
+"Tomato & Mascarpone Pasta Sauce", 
+"Unsalted Butter", 
+"Creme Fraiche", 
+"Chicken Thighs - Organic Brand", #(1kg so matches the user's cart)
+"Beef Steaks - Budget Brand", 
+"Minced Beef - Budget Brand", 
+"Onions - Budget Brand", 
+"Salmon Fillets - Budget Brand", 
+"Chestnut Mushrooms - Organic Brand", 
+"Strawberries - Budget Brand",
+"Broccoli - Organic Brand", 
+"Eggs - Budget Brand", 
+"Bok Choi - Organic Brand", 
+"Cucumber", 
+"Sugar Snap Peas", 
+"Duck Breast - Organic Brand", 
+"Bagels - Budget Brand"
+"Brioche Rolls",
+"Prawns- Organic Brand",
+""
+    ]
+
+    cart_filter = foods["food name"].str.lower().isin([c.lower() for c in cart_names])
+    cart = foods[cart_filter].copy()
+
+    if cart.empty:
+        print("⚠️ No items matched the cart names.")
+        return
+
+    cart["consumed_portion"] = 1.0
+    cart = cart.reset_index(drop=True)
+
+    # Collect food intentions
+    collect_all_food_intentions(cart)
+    ml_clustering.set_food_intentions(FOOD_INTENTIONS)
+
+    print(f"\n🛒 Interactive Shopping Cart Optimization")
+    print(f"📦 Starting cart contains {len(cart)} items for {total_meals} meals")
+
+    completeness_issues = check_cart_completeness(cart, min_cart_weight, total_meals)
+    if completeness_issues:
+        print("\n📋 Cart Assessment:")
+        for issue in completeness_issues:
+            print(f"   {issue}")
+
+    initial_price = get_cart_price(cart)
+    initial_weight = get_cart_weight(cart)
+    initial_totals = get_cart_totals(cart, total_pantry_carbs)
+
+    print(f"\n💰 Initial cart price: £{initial_price:.2f}")
+    print(f"⚖️ Initial cart weight: {initial_weight:.0f}g (excluding condiments)")
+    print_cart_analysis(cart, rdis, total_pantry_carbs, total_meals)
+
+    # Run optimization
+    cart = interactive_optimization_round(cart, foods, rdis, total_pantry_carbs, min_cart_weight)
+
+    # Add gap-filling suggestions
+    print(f"\n🔍 Checking for remaining nutrient gaps...")
+    cart = ask_for_gap_additions(cart, foods, rdis, total_pantry_carbs, gap_threshold=0.30)
+
+    # Final analysis
+    final_price = get_cart_price(cart)
+    final_weight = get_cart_weight(cart)
+    final_totals = get_cart_totals(cart, total_pantry_carbs)
+    final_score = cart_score_fixed(cart, rdis, total_pantry_carbs)
+
+    print("\n🌟 Optimization Complete!")
+    print(f"\n💰 Price Summary:")
+    print(f"   Initial price: £{initial_price:.2f}")
+    print(f"   Final price: £{final_price:.2f}")
+    print(f"   Change: {'+' if final_price - initial_price >= 0 else ''}£{final_price - initial_price:.2f}")
+
+    print(f"\n⚖️ Weight Summary:")
+    print(f"   Initial weight: {initial_weight:.0f}g")
+    print(f"   Final weight: {final_weight:.0f}g")
+    print(f"   Change: {'+' if final_weight - initial_weight >= 0 else ''}{final_weight - initial_weight:.0f}g")
+
+    initial_score = cart_score_fixed(cart, rdis, total_pantry_carbs)
+    print(f"\n🎯 Initial Cart Score: {initial_score:.2f}/10.0")
+
+    create_nutrient_summary(initial_totals, final_totals, rdis)
+    print_cart_analysis(cart, rdis, total_pantry_carbs, total_meals)
+    print(f"\n🏆 Final Cart Score: {final_score:.3f}/10.0")
+
+    print(f"\n📋 Final Cart Contents:")
+    for _, item in cart.iterrows():
+        name = item['food name']
+        category = item.get('category', 'Unknown').title()
+        price = item.get('price (gbp)', 0.0)
+        print(f"  • {name} ({category}) - £{price:.2f}")
+
+if __name__ == "__main__":
+    main_interactive()

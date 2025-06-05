@@ -1,0 +1,15 @@
+Nutrient,Weight,Rationale
+Protein,2.0,Needs planning to ensure complete amino acid profiles.
+Carbohydrates,1.2,Typically abundant; moderate importance.
+Fats,1.0,Important for fat-soluble vitamins; watch balance of omega-6/3.
+Fiber,1.5,"Abundant in plant diets, but still very beneficial."
+Iron,2.0,Non-heme iron is less absorbable; risk of deficiency.
+Calcium,1.2,Missing dairy may lead to lower intake.
+Omega-3 (ALA),1.5,"Must convert from ALA in flax, chia, etc.; conversion is inefficient."
+Zinc,1.8,Poor absorption from plants; higher need.
+Vitamin B12,3.0,Not found in plant foods; must come from fortified foods or supplements.
+Folate (B9),1.5,Abundant in greens and legumes — still important.
+Vitamin C,1.0,Aids iron absorption — helps mitigate low iron absorption.
+Sugar (added),-1.0,Many processed vegan foods are high in sugar.
+Saturated Fat,-0.8,"Usually low, but should still be monitored."
+Sodium,-0.8,Processed plant foods can be sodium-heavy.

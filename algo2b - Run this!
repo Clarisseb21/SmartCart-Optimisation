@@ -2,9 +2,8 @@ import pandas as pd
 import numpy as np
 import ml_clustering10_final as ml_clustering
 
-# -------------------------------
-# Configuration
-# -------------------------------
+# === Configuration ===
+
 SWAP_THRESHOLD = 0.05
 MAX_SWAPS = 5
 SUGGESTIONS_PER_ROUND = 5
@@ -23,11 +22,10 @@ PORTION_SIZES = {
 # Global variable to store user food intentions
 FOOD_INTENTIONS = {}
 
-# Load data
 foods = pd.read_csv("Final _dataset.csv")
 weights = pd.read_csv("general_healthy_weights.csv")
 
-# Clean column names
+# Cleaning column names
 foods.columns = foods.columns.str.strip().str.lower()
 weights.columns = weights.columns.str.strip().str.lower()
 weights["nutrient"] = weights["nutrient"].str.strip().str.lower()
@@ -45,7 +43,7 @@ nutrient_name_map = {
 nutrient_columns = [nutrient_name_map[n] for n in weights["nutrient"] if n in nutrient_name_map]
 nutrient_weights = {nutrient_name_map[n]: w for n, w in zip(weights["nutrient"], weights["weight"]) if n in nutrient_name_map}
 
-# Daily RDIs
+#Daily RDIs based on research in notion page 
 rdis_daily = {
     "calories": 2000, "protein (g)": 45, "carbohydrates (g)": 250, "fats (g)": 78,
     "fiber (g)": 30, "iron (mg)": 18, "calcium (mg)": 1000, "omega 3 (g)": 1.1,
@@ -662,7 +660,7 @@ def interactive_optimization_round(cart, food_df, rdis, total_pantry_carbs, min_
             choice = input("Your choice: ").strip().lower()
 
             if choice == "skip":
-                print("🛑 Optimization stopped by user.")
+                print("Optimization stopped by user.")
                 return cart
 
             if choice.startswith("more"):
@@ -822,12 +820,12 @@ def find_gap_filling_foods(nutrient_gaps, all_foods, cart, max_suggestions=5):
 
 def display_gap_filling_suggestions(gap_foods, nutrient_gaps):
     """Display suggested foods to fill nutrient gaps"""
-    print(f"\n💊 Suggested additions to fill nutrient gaps:")
+    print(f"\n Suggested additions to fill nutrient gaps:")
     print("-" * 60)
     
     if not gap_foods:
-        print("❌ No realistic foods found to fill nutrient gaps!")
-        print("💡 Try adding more fruits, vegetables, whole grains, or protein sources manually.")
+        print("No realistic foods found to fill nutrient gaps!")
+        print("Try adding more fruits, vegetables, whole grains, or protein sources manually.")
         return
     
     for i, suggestion in enumerate(gap_foods, 1):
@@ -893,7 +891,7 @@ def ask_for_gap_additions(cart, all_foods, rdis, total_pantry_carbs, gap_thresho
         if not nutrient_gaps:
             if round_count == 0:
                 print(f"\n✅ Great! No major nutrient gaps detected (all shop-required nutrients above {gap_threshold*100:.0f}% RDI)")
-                print("💡 Note: Some nutrients may be low but are typically available from home pantry")
+                print("Note: Some nutrients may be low but are typically available from home pantry")
             else:
                 print(f"\n✅ All critical nutrient gaps have been addressed!")
             return cart
@@ -916,12 +914,12 @@ def ask_for_gap_additions(cart, all_foods, rdis, total_pantry_carbs, gap_thresho
             print(f"\n💡 Note: Suggestions prioritize nutritional impact over price efficiency")
         
         if round_count > 0:
-            want_more = input(f"\n🤔 Continue adding foods to improve these nutrients? (yes/no): ").strip().lower()
+            want_more = input(f"\nContinue adding foods to improve these nutrients? (yes/no): ").strip().lower()
         else:
-            want_more = input(f"\n🤔 Would you like suggestions for foods to add that address these gaps? (yes/no): ").strip().lower()
+            want_more = input(f"\nWould you like suggestions for foods to add that address these gaps? (yes/no): ").strip().lower()
         
         if want_more not in ['yes', 'y']:
-            print("📝 Skipping further gap-filling suggestions.")
+            print("Skipping further gap-filling suggestions.")
             return cart
         
         gap_foods = find_gap_filling_foods(nutrient_gaps, all_foods, cart)
@@ -940,7 +938,7 @@ def ask_for_gap_additions(cart, all_foods, rdis, total_pantry_carbs, gap_thresho
         choice = input("Your selection: ").strip().lower()
         
         if choice == 'none':
-            print("📝 No foods added.")
+            print("No foods added.")
             return cart
         
         try:
@@ -992,7 +990,7 @@ def main_interactive():
     
     # Load cart
     cart_names = [
-        "Apricots (4 pack) - Organic Brand", 
+"Apricots (4 pack) - Organic Brand", 
 "Vanilla Yoghurt", 
 "Raspberries - Organic Brand", 
 "Tomato & Mascarpone Pasta Sauce", 
@@ -1027,7 +1025,7 @@ def main_interactive():
     cart["consumed_portion"] = 1.0
     cart = cart.reset_index(drop=True)
 
-    # Collect food intentions
+    #Collect food intentions
     collect_all_food_intentions(cart)
     ml_clustering.set_food_intentions(FOOD_INTENTIONS)
 
@@ -1036,7 +1034,7 @@ def main_interactive():
 
     completeness_issues = check_cart_completeness(cart, min_cart_weight, total_meals)
     if completeness_issues:
-        print("\n📋 Cart Assessment:")
+        print("\nCart Assessment:")
         for issue in completeness_issues:
             print(f"   {issue}")
 

@@ -5,16 +5,14 @@ from nltk.stem import WordNetLemmatizer
 
 nltk.download('wordnet')
 
-# Load your dataset
 df = pd.read_csv("FINAL_DATASET.csv")
 
-# Initialize lemmatizer
 lemmatizer = WordNetLemmatizer()
 
 def filter_food_items(df, diet=None, allergies=None, dislikes=None):
     filtered_df = df.copy()
 
-    # Define common synonyms and variants
+    #Define common synonyms and variants
     allergen_variants = {
         "dairy": r"\blactose|milk|dairy\b",
         "gluten": r"\bgluten(-free)?\b",
@@ -27,7 +25,7 @@ def filter_food_items(df, diet=None, allergies=None, dislikes=None):
     def normalize(text):
         return str(text).lower().strip()
 
-    # Diet filtering
+    #Diet filtering
     if diet:
         diet = normalize(diet)
         if diet == "pescetarian":
@@ -41,7 +39,7 @@ def filter_food_items(df, diet=None, allergies=None, dislikes=None):
                 filtered_df["Diet Tags"].str.lower().str.contains(pattern, na=False, regex=True)
             ]
 
-    # Allergy filtering
+    #Allergy filtering
     if allergies:
         for allergen in allergies:
             allergen = normalize(allergen)
@@ -50,7 +48,7 @@ def filter_food_items(df, diet=None, allergies=None, dislikes=None):
                 ~filtered_df["Allergens"].str.lower().str.contains(pattern, na=False, regex=True)
             ]
 
-    # Smart dislike filtering
+    #smart dislike filtering
     if dislikes:
         for dislike in dislikes:
             dislike = normalize(dislike)
